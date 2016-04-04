@@ -1,10 +1,9 @@
 .players {
     float: left;
-    width: 30%;
+    width: 200px;
 }
 .community {
     float: left;
-    width: 70%;
 }
 .controls {
     margin-bottom: 15px;
@@ -17,7 +16,7 @@
     height: 100px;
 
 }
-.winner {
+.rank {
     color: green;
     font-weight: bold;
     margin-left: 10px;

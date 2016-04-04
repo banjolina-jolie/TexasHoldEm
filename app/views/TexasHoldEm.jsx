@@ -9,9 +9,9 @@ function freshState(playerCount) {
     let players = utils.buildPlayers(playerCount);
     let gameState = 0;
     let communityCards = [];
-    let winner = '';
+    let rankedPlayers = false;
 
-    return { deck, players, gameState, communityCards, winner };
+    return { deck, players, gameState, communityCards, rankedPlayers };
 }
 
 
@@ -22,8 +22,8 @@ let TexasHoldEmView = React.createClass({
     },
 
     componentDidUpdate() {
-        if (this.state.gameState === 4 && !this.state.winner) {
-            this._selectWinner();
+        if (this.state.gameState === 4 && !this.state.rankedPlayers) {
+            this._showRankings();
         }
     },
 
@@ -35,7 +35,6 @@ let TexasHoldEmView = React.createClass({
                     <label>Players</label>
                     <input type="number" min="2" max="6" value={this.state.players.length} onChange={this._playerCountChanged} />
                     { this.renderButton() }
-                    <span className="winner">{this.state.winner}</span>
                 </div>
 
 
@@ -69,6 +68,7 @@ let TexasHoldEmView = React.createClass({
             <div className="player">
                 <div className="player-name">
                     {player.name}
+                    <span className="rank">{player.rank}</span>
                 </div>
                 {player.hand.map(this.renderCard)}
             </div>
@@ -124,9 +124,16 @@ let TexasHoldEmView = React.createClass({
         this.setState(freshState(playerCount));
     },
 
-    _selectWinner() {
-        let winner = utils.checkForWinner(this.state.players, this.state.communityCards);
-        this.setState({winner});
+    _showRankings() {
+        let players = this.state.players;
+        let rankedPlayers = utils.getRankedPlayers(players, this.state.communityCards);
+
+        rankedPlayers.forEach(rankedPlayer => {
+            let player = _.findWhere(players, {name: rankedPlayer.name});
+            player.rank = rankedPlayer.rank;
+        });
+
+        this.setState({players, rankedPlayers});
     }
 
 });

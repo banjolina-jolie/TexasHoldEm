@@ -58,16 +58,17 @@ module.exports = {
         }
         return output;
     },
-    checkForWinner(players, community) {
+    getRankedPlayers(players, community) {
         // create normalized players
         let nPlayers = players.map(player => {
             return {
-                playerName: player.name,
+                name: player.name,
                 nHand: normalizeHand(player.hand.concat(community))
             };
         });
 
-        return extractWinner(nPlayers);
+
+        return rankedPlayers(nPlayers);
     }
 };
 
@@ -232,17 +233,40 @@ function normalizeByStraight (hand, flushSuit) {
     return [-1];
 }
 
-function extractWinner (players) {
+function rankedPlayers (input) {
+    let output = [];
+    let rank = 1;
+
+    function sortPlayers (players) {
+        let winners = extractWinners(players);
+        winners.forEach(name => {
+            output.push({ name, rank });
+        });
+
+        rank += winners.length;
+
+        let remainders = input.filter(player => {
+            return !_.findWhere(output, {name: player.name});
+        });
+
+        if (remainders.length) {
+            sortPlayers(remainders);
+        }
+    }
+
+    sortPlayers(input);
+    return output;
+}
+
+function extractWinners (players) {
     // if only one player is left, that's our winner
     if (players.length === 1) {
-        return players[0].playerName + ' wins';
+        return [players[0].name];
     }
 
     // if we've removed all values from nHand, then it's a tie among all remaining players
     if (!players[0].nHand.length) {
-        let output = 'Tie between ';
-        output += _.pluck(players, 'playerName');
-        return output;
+        return _.pluck(players, 'name');
     }
 
     // sort players based on 1st nHand value
@@ -261,5 +285,5 @@ function extractWinner (players) {
     });
 
     // recurse with remaining players
-    return extractWinner(topPlayers);
+    return extractWinners(topPlayers);
 }
