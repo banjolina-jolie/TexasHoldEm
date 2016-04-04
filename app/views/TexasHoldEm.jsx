@@ -1,15 +1,24 @@
 'use strict';
+let _ = require('lodash');
 let React = require('react/addons');
 let utils = require('../utils');
 let HAND_SIZE = 2;
 
-let _ = require('lodash');
+function freshState(playerCount) {
+    let deck = _.shuffle(utils.buildDeck());
+    let players = utils.buildPlayers(playerCount);
+    let gameState = 0;
+    let communityCards = [];
+    let winner = '';
+
+    return { deck, players, gameState, communityCards, winner };
+}
 
 
 let TexasHoldEmView = React.createClass({
 
     getInitialState() {
-        return this._freshState(2);
+        return freshState(2);
     },
 
     componentDidUpdate() {
@@ -107,24 +116,12 @@ let TexasHoldEmView = React.createClass({
 
     _playerCountChanged(e) {
         let count = e.target.value;
-        let freshState = this._freshState(count);
-        this.setState(freshState);
-    },
-
-    _freshState(playerCount) {
-        let deck = _.shuffle(utils.buildDeck());
-        let players = utils.buildPlayers(playerCount);
-        let gameState = 0;
-        let communityCards = [];
-        let winner = '';
-
-        return { deck, players, gameState, communityCards, winner };
+        this.setState(freshState(count));
     },
 
     _resetGame() {
         let playerCount = this.state.players.length;
-        let freshState = this._freshState(playerCount);
-        this.setState(freshState);
+        this.setState(freshState(playerCount));
     },
 
     _selectWinner() {
