@@ -26,7 +26,7 @@ let values = [
     {val: 'J', qVal: 11},
     {val: 'Q', qVal: 12},
     {val: 'K', qVal: 13},
-    {val: 'A', qVal: 14, altVal: 1}
+    {val: 'A', qVal: 14}
 ];
 
 // Push non face cards into values
@@ -58,17 +58,17 @@ module.exports = {
         return output;
     },
     checkForWinner(players, community) {
+        // window.players = players;
+        // window.community = community;
+
         let nHands = players.map(player => {
             return {
                 playerName: player.name,
                 nHand: normalizeHand(player.hand.concat(community))
             };
         });
-        nHands.sort((a,b) => {
-            return b.nHand[0] - a.nHand[0];
-        });
 
-        return nHands[0].playerName;
+        return extractWinner(nHands);
     }
 };
 
@@ -81,11 +81,11 @@ function normalizeHand (hand) {
     // E = kicker
     // F = kicker
     // example: [2, 10, 4, 12] => 10♠, 10♥, 4♦, 4♠, K♥ (two pair)
-    let normdHands = []
+    let flushMemo = {suit: null};
+    let normdHands = [];
     normdHands.push(normalizeBySameVal(hand));
-    normdHands.push(normalizeByFlush(hand));
-    let hasFlush = normdHands[1] > -1;
-    normdHands.push(normalizeByStraight(hand, hasFlush));
+    normdHands.push(normalizeByFlush(hand, flushMemo));
+    normdHands.push(normalizeByStraight(hand, flushMemo.suit));
 
     normdHands.sort((a,b) => {
         return b[0] - a[0];
@@ -137,7 +137,7 @@ function normalizeBySameVal (hand) {
 
 
 // Check for flush
-function normalizeByFlush (hand) {
+function normalizeByFlush (hand, memo) {
     let output = [];
     let sorted = _.sortBy(hand, 'qVal');
     sorted = _.sortBy(hand, 'suit');
@@ -148,38 +148,100 @@ function normalizeByFlush (hand) {
             return card.suit === sorted[i].suit;
         });
         if (isFlush) {
-            return [FLUSH, sorted[i+4].qVal];
+            memo.suit = sorted[i].suit; // remember suit for normalizeByStraight
+            let output = [FLUSH];
+            let toAdd = 4;
+
+            while (toAdd >= 0) {
+                output.push(sorted[i+toAdd].qVal);
+                toAdd--;
+            }
+            return output;
         }
     }
 
     return [-1];
 }
 
+function removeDups (hand) {
+    let memo = {};
+    return hand.filter(card => {
+        let isDuped = memo[card.qVal];
+        memo[card.qVal] = true;
+        return !isDuped;
+    });
+}
+
+function addAcesToStart (hand) {
+    let lastCard = _.last(hand);
+    if (lastCard.qVal === 14) {
+        hand.unshift({qVal: 1, suit: lastCard.suit});
+    }
+}
+
 // Check for straight
-function normalizeByStraight (hand, hasFlush) {
+function normalizeByStraight (hand, flushSuit) {
     let output = [];
 
     let sorted = _.sortBy(hand, 'qVal');
 
-    for (var i = sorted.length-1; i >= 5; i--) {
+    if (flushSuit) {
+        // if there's a flush suit, remove all non-suited cards.
+        // we're only looking for a straight flush
+        sorted = sorted.filter(card => {
+            return card.suit === flushSuit;
+        });
+    } else {
+        sorted = removeDups(sorted);
+    }
+
+    // add aces to beginning
+    addAcesToStart(sorted);
+
+    // start at end
+    for (var i = sorted.length-1; i >= 4; i--) {
         let diff = 1;
         let inSequence = true;
-        let isFlush = true;
 
         while (diff < 5 && inSequence) {
-            inSequence = inSequence && (sorted[i-diff].qVal === sorted[i].qVal - diff || sorted[i-diff].altVal === sorted[i].qVal - diff);
-            isFlush = isFlush && sorted[i-diff].suit === sorted[i].suit;
+            inSequence = inSequence && sorted[i-diff].qVal === sorted[i].qVal - diff;
             diff++;
         }
 
         if (inSequence) {
-            if (isFlush) {
+            if (flushSuit) {
                 return [STRAIGHT_FLUSH, sorted[i].qVal];
-            } else if (!hasFlush) {
+            } else {
                 return [STRAIGHT, sorted[i].qVal];
             }
         }
     }
 
     return [-1];
+}
+
+function extractWinner (hands) {
+    if (hands.length === 1) {
+        return hands[0].playerName + ' wins';
+    }
+
+    if (!hands[0].nHand.length) {
+        let output = 'Tie between ';
+        output += _.pluck(hands, 'playerName');
+        return output;
+    }
+
+    hands.sort((a, b) => {
+        return b.nHand[0] - a.nHand[0];
+    });
+
+    let topHands = hands.filter(hand => {
+        return hand.nHand[0] === hands[0].nHand[0];
+    });
+
+    topHands.forEach(hand => {
+        hand.nHand.shift();
+    });
+
+    return extractWinner(topHands);
 }

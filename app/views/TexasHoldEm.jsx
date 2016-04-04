@@ -21,11 +21,12 @@ let TexasHoldEmView = React.createClass({
     render() {
         return (
             <div>
-                <h2>TexasHoldEm</h2>
+                <h2>Texas Hold 'em</h2>
                 <div className="controls">
                     <label>Players</label>
                     <input type="number" min="2" max="6" value={this.state.players.length} onChange={this._playerCountChanged} />
                     { this.renderButton() }
+                    <span className="winner">{this.state.winner}</span>
                 </div>
 
 
@@ -54,20 +55,11 @@ let TexasHoldEmView = React.createClass({
         return (<button onClick={state[0]}>{state[1]}</button>);
     },
 
-    renderWinner(name) {
-        if (name === this.state.winner) {
-            return (
-                <span className="winner">Winner!</span>
-            );
-        }
-    },
-
     renderPlayer(player) {
         return (
             <div className="player">
                 <div className="player-name">
                     {player.name}
-                    {this.renderWinner(player.name)}
                 </div>
                 {player.hand.map(this.renderCard)}
             </div>
