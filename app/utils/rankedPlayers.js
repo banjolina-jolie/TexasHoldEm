@@ -1,15 +1,20 @@
 'use strict';
 
 const _ = require('lodash');
+const winningHands = require('../configs/WinningHands.json');
 
 module.exports = nPlayers => {
+    nPlayers.forEach(nPlayer => {
+        nPlayer.handType = winningHands[nPlayer.nHand[0]].name;
+    });
+
     let output = [];
     let rank = 1;
 
     function sortPlayers (players) {
         let winners = extractWinners(players);
-        winners.forEach(name => {
-            output.push({ name, rank });
+        winners.forEach(obj => {
+            output.push({ handType: obj.handType, name: obj.name, rank });
         });
 
         // bump rank by number of winners from previous extractWinners call
@@ -34,12 +39,12 @@ module.exports = nPlayers => {
 function extractWinners (players) {
     // if only one player is left, that's our winner
     if (players.length === 1) {
-        return [players[0].name];
+        return [{name: players[0].name, handType: players[0].handType}];
     }
 
     // if we've removed all values from nHand, then it's a tie among all remaining players
     if (!players[0].nHand.length) {
-        return _.pluck(players, 'name');
+        return players;
     }
 
     // sort players based on 1st nHand value

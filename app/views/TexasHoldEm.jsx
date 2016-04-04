@@ -69,6 +69,7 @@ let TexasHoldEmView = React.createClass({
                 <div className="player-name">
                     {player.name}
                     <span className="rank">{player.rank}</span>
+                    <span className="hand-type">{player.handType}</span>
                 </div>
                 {player.hand.map(this.renderCard)}
             </div>
@@ -105,6 +106,10 @@ let TexasHoldEmView = React.createClass({
             let deck = this.state.deck;
             let gameState = ++this.state.gameState;
 
+            // burn one card
+            deck.shift();
+
+            // deal either 1 or 3
             while (N) {
                 communityCards.push(deck.shift());
                 N--;
@@ -131,6 +136,7 @@ let TexasHoldEmView = React.createClass({
         rankedPlayers.forEach(rankedPlayer => {
             let player = _.findWhere(players, {name: rankedPlayer.name});
             player.rank = rankedPlayer.rank;
+            player.handType = rankedPlayer.handType;
         });
 
         this.setState({players, rankedPlayers});

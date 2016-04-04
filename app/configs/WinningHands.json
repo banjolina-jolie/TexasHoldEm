@@ -1,11 +1,11 @@
 [
-    {"name": "HIGH_CARD", "params": 5},
-    {"name": "ONE_PAIR", "params": 4},
-    {"name": "TWO_PAIR", "params": 3},
-    {"name": "THREE_OF_KIND", "params": 3},
-    {"name": "STRAIGHT"},
-    {"name": "FLUSH"},
-    {"name": "FULL_HOUSE", "params": 2},
-    {"name": "FOUR_OF_KIND", "params": 2},
-    {"name": "STRAIGHT_FLUSH"}
+    {"name": "(high card)", "params": 5},
+    {"name": "(one pair)", "params": 4},
+    {"name": "(two pair)", "params": 3},
+    {"name": "(three of kind)", "params": 3},
+    {"name": "(straight)"},
+    {"name": "(flush)"},
+    {"name": "(full house)", "params": 2},
+    {"name": "(four of kind)", "params": 2},
+    {"name": "(straight flush)"}
 ]
