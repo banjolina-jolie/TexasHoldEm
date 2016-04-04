@@ -4,31 +4,6 @@ let utils = require('../app/utils');
 let players;
 let community;
 
-/*
-
-function reduceCard (card) {
-    let newCard = {};
-    newCard.qVal = card.qVal;
-    if (card.altVal) {
-        newCard.altVal = card.altVal;
-    }
-    newCard.suit = card.suit;
-    return newCard;
-}
-
-let stuff = players.map(player => {
-    player.hand = player.hand.map(reduceCard);
-    return player;
-});
-
-let otro = community.map(reduceCard);
-
-console.log(JSON.stringify(stuff))
-
-console.log(JSON.stringify(otro))
-
-*/
-
 
 // high card
 players = [
