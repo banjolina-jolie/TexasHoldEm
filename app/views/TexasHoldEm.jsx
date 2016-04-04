@@ -33,7 +33,7 @@ let TexasHoldEmView = React.createClass({
                 <h2>Texas Hold 'em</h2>
                 <div className="controls">
                     <label>Players</label>
-                    <input type="number" min="2" max="6" value={this.state.players.length} onChange={this._playerCountChanged} />
+                    <input type="number" min="2" max="20" value={this.state.players.length} onChange={this._playerCountChanged} />
                     { this.renderButton() }
                 </div>
 

@@ -50,8 +50,6 @@ module.exports = {
         return output;
     },
     getRankedPlayers(players, community) {
-        // window.players = players;
-        // window.community = community;
         // create normalized players
         let nPlayers = players.map(player => {
             return {
