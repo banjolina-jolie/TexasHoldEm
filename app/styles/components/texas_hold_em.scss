@@ -1,0 +1,41 @@
+.players {
+    float: left;
+    width: 30%;
+}
+.community {
+    float: left;
+    width: 70%;
+}
+.controls {
+    margin-bottom: 15px;
+
+    label, input {
+        margin-right: 3px;
+    }
+}
+.player {
+    height: 100px;
+
+}
+.winner {
+    color: green;
+    font-weight: bold;
+    margin-left: 4px;
+}
+.player-name {
+    margin-right: 10px;
+}
+.card {
+    display: inline-block;
+    height: 60px;
+    width: 40px;
+    border: 1px solid black;
+    border-radius: 4px;
+    text-align: center;
+    margin: 7px 3px 0 0;
+    line-height: 35px;
+
+    &.red {
+        color: red;
+    }
+}
