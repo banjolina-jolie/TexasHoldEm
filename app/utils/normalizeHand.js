@@ -2,9 +2,8 @@
 
 const _ = require('lodash');
 
-const winningHands = require('./configs/WinningHands.json');
-const names = require('./configs/Names.json');
-
+const winningHands = require('../configs/WinningHands.json');
+// Hand Values
 const HIGH_CARD = 0
 const ONE_PAIR = 1;
 const TWO_PAIR = 2;
@@ -15,65 +14,7 @@ const FULL_HOUSE = 6;
 const FOUR_OF_KIND = 7;
 const STRAIGHT_FLUSH = 8;
 
-const suits = [
-    {suitName: '♠', color: 'black'},
-    {suitName: '♥', color: 'red'},
-    {suitName: '♣', color: 'black'},
-    {suitName: '♦', color: 'red'}
-];
-
-// start with just face cards
-let cardValues = [
-    {val: 'J', qVal: 11},
-    {val: 'Q', qVal: 12},
-    {val: 'K', qVal: 13},
-    {val: 'A', qVal: 14}
-];
-
-// Push non face cards into cardValues
-for (var i = 10; i >= 2; i--) {
-    cardValues.unshift({val: i, qVal: i});
-}
-
-module.exports = {
-    buildDeck() {
-        let output = [];
-
-        // create a card for each suit and value
-        suits.forEach(suit => {
-            cardValues.forEach(value => {
-                let card = _.extend({}, value);
-                card.suit = suit.suitName;
-                card.color = suit.color;
-                output.push(card);
-            });
-        });
-
-        return output;
-    },
-    buildPlayers(N) {
-        let output = [];
-        for (var i = 0; i < N; i++) {
-            output.push({name: names[i], hand: []});
-        }
-        return output;
-    },
-    getRankedPlayers(players, community) {
-        // create normalized players
-        let nPlayers = players.map(player => {
-            return {
-                name: player.name,
-                nHand: normalizeHand(player.hand.concat(community))
-            };
-        });
-
-
-        return rankedPlayers(nPlayers);
-    }
-};
-
-
-function normalizeHand (hand) {
+module.exports = hand => {
     // each normalize function returns [A, B, C (, D, E, F)]
     // A = hand score
     // B = high card -> quadruplet
@@ -86,6 +27,7 @@ function normalizeHand (hand) {
 
     let flushMemo = {suit: null};
 
+    // find 3 different normalized hands based on different scoring criteria
     let normdHands = [];
     normdHands.push(normalizeBySameVal(hand));
     normdHands.push(normalizeByFlush(hand, flushMemo));
@@ -97,7 +39,7 @@ function normalizeHand (hand) {
 
     // return highest normalized hand
     return normdHands[0];
-}
+};
 
 function normalizeBySameVal (hand) {
     let output = [];
@@ -173,22 +115,6 @@ function normalizeByFlush (hand, memo) {
     return [-1];
 }
 
-function removeDups (hand) {
-    let memo = {};
-    return hand.filter(card => {
-        let isDuped = memo[card.qVal];
-        memo[card.qVal] = true;
-        return !isDuped;
-    });
-}
-
-function addAcesToStart (hand) {
-    let lastCard = _.last(hand);
-    if (lastCard.qVal === 14) {
-        hand.unshift({qVal: 1, suit: lastCard.suit});
-    }
-}
-
 // Check for straight
 function normalizeByStraight (hand, flushSuit) {
     let output = [];
@@ -220,6 +146,7 @@ function normalizeByStraight (hand, flushSuit) {
             diff++;
         }
 
+        // straight has been found
         if (inSequence) {
             if (flushSuit) {
                 return [STRAIGHT_FLUSH, sorted[i].qVal];
@@ -233,57 +160,18 @@ function normalizeByStraight (hand, flushSuit) {
     return [-1];
 }
 
-function rankedPlayers (input) {
-    let output = [];
-    let rank = 1;
-
-    function sortPlayers (players) {
-        let winners = extractWinners(players);
-        winners.forEach(name => {
-            output.push({ name, rank });
-        });
-
-        rank += winners.length;
-
-        let remainders = input.filter(player => {
-            return !_.findWhere(output, {name: player.name});
-        });
-
-        if (remainders.length) {
-            sortPlayers(remainders);
-        }
-    }
-
-    sortPlayers(input);
-    return output;
+function removeDups (hand) {
+    let memo = {};
+    return hand.filter(card => {
+        let isDuped = memo[card.qVal];
+        memo[card.qVal] = true;
+        return !isDuped;
+    });
 }
 
-function extractWinners (players) {
-    // if only one player is left, that's our winner
-    if (players.length === 1) {
-        return [players[0].name];
+function addAcesToStart (hand) {
+    let lastCard = _.last(hand);
+    if (lastCard.qVal === 14) {
+        hand.unshift({qVal: 1, suit: lastCard.suit});
     }
-
-    // if we've removed all values from nHand, then it's a tie among all remaining players
-    if (!players[0].nHand.length) {
-        return _.pluck(players, 'name');
-    }
-
-    // sort players based on 1st nHand value
-    players.sort((a, b) => {
-        return b.nHand[0] - a.nHand[0];
-    });
-
-    // remove all players with a lower 1st nHand value than the 1st player's 1st nHand value
-    let topPlayers = players.filter(player => {
-        return player.nHand[0] === players[0].nHand[0];
-    });
-
-    // remove 1st nHand value from all players
-    topPlayers.forEach(player => {
-        player.nHand.shift();
-    });
-
-    // recurse with remaining players
-    return extractWinners(topPlayers);
 }

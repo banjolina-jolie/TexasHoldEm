@@ -1,12 +1,12 @@
 'use strict';
 let _ = require('lodash');
 let React = require('react/addons');
-let utils = require('../utils');
+let gamePlay = require('../utils/gamePlay');
 let HAND_SIZE = 2;
 
 function freshState(playerCount) {
-    let deck = _.shuffle(utils.buildDeck());
-    let players = utils.buildPlayers(playerCount);
+    let deck = _.shuffle(gamePlay.buildDeck());
+    let players = gamePlay.buildPlayers(playerCount);
     let gameState = 0;
     let communityCards = [];
     let rankedPlayers = false;
@@ -126,7 +126,7 @@ let TexasHoldEmView = React.createClass({
 
     _showRankings() {
         let players = this.state.players;
-        let rankedPlayers = utils.getRankedPlayers(players, this.state.communityCards);
+        let rankedPlayers = gamePlay.getRankedPlayers(players, this.state.communityCards);
 
         rankedPlayers.forEach(rankedPlayer => {
             let player = _.findWhere(players, {name: rankedPlayer.name});
