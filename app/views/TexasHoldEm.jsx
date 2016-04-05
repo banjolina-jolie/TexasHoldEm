@@ -133,6 +133,7 @@ let TexasHoldEmView = React.createClass({
         let players = this.state.players;
         let rankedPlayers = gamePlay.getRankedPlayers(players, this.state.communityCards);
 
+        // set rank and handType of each player in this.state.players
         rankedPlayers.forEach(rankedPlayer => {
             let player = _.findWhere(players, {name: rankedPlayer.name});
             player.rank = rankedPlayer.rank;

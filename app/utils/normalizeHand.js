@@ -23,7 +23,7 @@ module.exports = hand => {
     // E = kicker
     // F = kicker
 
-    // example: 10♠, 10♥, 4♦, 4♠, K♥, 7♣, 9♣ => [2, 10, 4, 12] (two pair)
+    // example: 10♠, 10♥, 4♦, 4♠, Q♥, 7♣, 9♣ => [2, 10, 4, 12] (two pair)
 
     let flushMemo = {suit: null};
 
