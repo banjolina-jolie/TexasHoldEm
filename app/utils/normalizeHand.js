@@ -1,177 +1,186 @@
 'use strict';
 
 const _ = require('lodash');
-
 const winningHands = require('../configs/WinningHands.json');
-// Hand Values
-const HIGH_CARD = 0
-const ONE_PAIR = 1;
-const TWO_PAIR = 2;
-const THREE_OF_KIND = 3;
-const STRAIGHT = 4;
-const FLUSH = 5;
-const FULL_HOUSE = 6;
-const FOUR_OF_KIND = 7;
-const STRAIGHT_FLUSH = 8;
 
-module.exports = hand => {
-    // each normalize function returns [A, B, C (, D, E, F)]
-    // A = hand score
-    // B = high card -> quadruplet
-    // C = kicker -> lower of 2 pair
-    // D = kicker
-    // E = kicker
-    // F = kicker
-
-    // example: 10♠, 10♥, 4♦, 4♠, Q♥, 7♣, 9♣ => [2, 10, 4, 12] (two pair)
-
-    let flushMemo = {suit: null};
-
-    // find 3 different normalized hands based on different scoring criteria
-    let normdHands = [];
-    normdHands.push(normalizeBySameVal(hand));
-    normdHands.push(normalizeByFlush(hand, flushMemo));
-    normdHands.push(normalizeByStraight(hand, flushMemo.suit));
-
-    normdHands.sort((a,b) => {
-        return b[0] - a[0];
-    });
-
-    // return highest normalized hand
-    return normdHands[0];
+const handValues = {
+  HIGH_CARD: 0,
+  ONE_PAIR: 1,
+  TWO_PAIR: 2,
+  THREE_OF_KIND: 3,
+  STRAIGHT: 4,
+  FLUSH: 5,
+  FULL_HOUSE: 6,
+  FOUR_OF_KIND: 7,
+  STRAIGHT_FLUSH: 8
 };
 
-function normalizeBySameVal (hand) {
-    let output = [];
+// A normalized hand is an array representation of the 5 cards a player can use
+// The first item is the hand score and the 2nd -> 6th are card qVals
 
-    // count how many of each card are present
-    let counter = {};
-    hand.forEach(card => {
-        if (counter[card.qVal]) {
-            counter[card.qVal]++;
-        } else {
-            counter[card.qVal] = 1;
-        }
-    });
+module.exports = sevenCards => {
+  /*
+    each normalize function returns [A, B (, C, D, E, F)]
+    A = hand score
+    B = high card, triplet card of THREE_OF_KIND or FULL_HOUSE, high card of straight
+    C = kicker, lower pair of TWO_PAIR or FULL_HOUSE
+    D = kicker
+    E = kicker
+    F = kicker
 
-    // define array of unique qVals and their count
-    let counterArr = _.map(counter, (count, qVal) => {
-        return {qVal: Number(qVal), count};
-    });
+    Examples:
+    - 1 Pair: 2♠, 2♥, 5♦, 7♠, 9♥, J♣, 6♣ => [1, 2, 11, 9, 7]
+    - 2 Pair: 10♠, 10♥, 4♦, 4♠, Q♥, 7♣, 9♣ => [2, 10, 4, 12]
+    - Straight: 3♠, 4♥, 5♦, 6♠, 7♥, 4♣, J♣ => [4, 7]
+    - Full House: 8♠, 8♥, 8♦, K♣, K♠, 10♥, A♣ => [6, 8, 13]
+    - 4 of Kind: Q♠, Q♥, Q♦, Q♣, 4♠, 10♥, A♣ => [7, 12, 14]
+    - Flush: 7♥, 2♥, 9♥, 10♥, 4♥, 10♠, A♣ => [5, 10, 9, 7, 4, 2]
+  */
 
-    // sort counterArr high to low primarily by count and secondarily by quantified value
-    counterArr = _.sortBy(counterArr, 'qVal');
-    counterArr = _.sortBy(counterArr, 'count');
-    counterArr.reverse();
+  // keeps track of the suit in case of flush scenario
+  let flushMemo = { suit: null };
 
-    // 1st element of output array is the score for hand type
-    if (counterArr[0].count === 4) {
-        output.push(FOUR_OF_KIND);
-    } else if (counterArr[0].count === 3) {
-        output.push(counterArr[1].count >= 2 ? FULL_HOUSE : THREE_OF_KIND);
-    } else if (counterArr[0].count === 2) {
-        output.push(counterArr[1].count === 2 ? TWO_PAIR : ONE_PAIR);
+  // find 3 different normalized hands based on different scoring criteria
+  let normdHands = [
+    normalizeBySameQVal(sevenCards),
+    normalizeByFlush(sevenCards, flushMemo),
+    normalizeByStraight(sevenCards, flushMemo.suit)
+  ];
+
+  // return normalized hand with highest hand score
+  return normdHands.sort((a, b) => b[0] - a[0])[0];
+};
+
+// This function checks for FOUR_OF_KIND, FULL_HOUSE, THREE_OF_KIND, TWO_PAIR, and ONE_PAIR
+function normalizeBySameQVal(hand) {
+  let sortedQVals = _.map(hand, 'qVal')
+    .sort((a, b) => a - b)
+    .reverse(); // highest qVals first
+
+  // count how many of each card are present
+  const counter = _.countBy(sortedQVals);
+
+  // define array of objects containing unique qVal and that qVal's count
+  let counts = _.map(counter, (count, qVal) => ({
+    qVal: Number(qVal),
+    count
+  }));
+
+  // sort counts high to low primarily by count and secondarily by quantified value
+  counts = _.sortBy(counts, 'qVal');
+  counts = _.sortBy(counts, 'count');
+  counts.reverse();
+
+  const mainSetQVal = counts[0].qVal;
+  const hasSecondSet = counts[1].count >= 2;
+
+  if (counts[0].count === 4) {
+    const kicker = _.without(sortedQVals, mainSetQVal)[0];
+    return [handValues.FOUR_OF_KIND, mainSetQVal, kicker];
+  } else if (counts[0].count === 3) {
+    if (hasSecondSet) {
+      return [handValues.FULL_HOUSE, mainSetQVal, counts[1].qVal];
     } else {
-        output.push(HIGH_CARD);
+      const threeOfKindKickers = _.without(sortedQVals, mainSetQVal).slice(
+        0,
+        2
+      );
+      return [handValues.THREE_OF_KIND, mainSetQVal].concat(threeOfKindKickers);
     }
-
-    // push qVals into output
-    // paramsLength ensures that our output accounts for 5 cards instead of 7
-    let paramsLength = winningHands[output[0]].params;
-    for (var i = 0; i < paramsLength; i++) {
-        output.push(Number(counterArr[i].qVal));
-    }
-
-    return output;
-}
-
-
-// Check if flush exists
-function normalizeByFlush (hand, memo) {
-    let output = [];
-    let sorted = _.sortBy(hand, 'qVal');
-    sorted = _.sortBy(hand, 'suit');
-
-    for (var i = sorted.length-5; i >= 0; i--) {
-        let fiveCards = sorted.slice(i, i+5);
-        let isFlush = _.every(fiveCards, card => {
-            return card.suit === sorted[i].suit;
-        });
-        if (isFlush) {
-            memo.suit = sorted[i].suit; // remember suit for normalizeByStraight
-            let output = [FLUSH];
-            let toAdd = 4;
-
-            while (toAdd >= 0) {
-                output.push(sorted[i+toAdd].qVal);
-                toAdd--;
-            }
-
-            return output;
-        }
-    }
-
-    // flush doesn't exist
-    return [-1];
-}
-
-// Check for straight
-function normalizeByStraight (hand, flushSuit) {
-    let output = [];
-
-    let sorted = _.sortBy(hand, 'qVal');
-
-    if (flushSuit) {
-        // if there's a flush suit, remove all non-suited cards.
-        // we're only looking for a straight flush
-        sorted = sorted.filter(card => {
-            return card.suit === flushSuit;
-        });
+  } else if (counts[0].count === 2) {
+    if (hasSecondSet) {
+      const twoPairKicker = _.without(
+        sortedQVals,
+        mainSetQVal,
+        counts[1].qVal
+      )[0];
+      return [handValues.TWO_PAIR, mainSetQVal, counts[1].qVal, twoPairKicker];
     } else {
-        // remove duplicates
-        sorted = removeDups(sorted);
+      const onePairKickers = _.without(sortedQVals, mainSetQVal).slice(0, 3);
+      return [handValues.ONE_PAIR, mainSetQVal].concat(onePairKickers);
     }
-
-    // add aces to beginning
-    addAcesToStart(sorted);
-
-    // start at end
-    for (var i = sorted.length-1; i >= 4; i--) {
-        let inSequence = true;
-        let diff = 1;
-
-        while (diff < 5 && inSequence) {
-            // from sorted[i], check sorted[i-diff]
-            inSequence = inSequence && sorted[i-diff].qVal === sorted[i].qVal - diff;
-            diff++;
-        }
-
-        // straight has been found
-        if (inSequence) {
-            if (flushSuit) {
-                return [STRAIGHT_FLUSH, sorted[i].qVal];
-            } else {
-                return [STRAIGHT, sorted[i].qVal];
-            }
-        }
-    }
-
-    // no straight
-    return [-1];
+  } else {
+    const highCardKickers = _.without(sortedQVals, mainSetQVal).slice(0, 4);
+    return [handValues.HIGH_CARD, mainSetQVal].concat(highCardKickers);
+  }
 }
 
-function removeDups (hand) {
-    let memo = {};
-    return hand.filter(card => {
-        let isDuped = memo[card.qVal];
-        memo[card.qVal] = true;
-        return !isDuped;
-    });
+// This function checks for FLUSH and sets `suit` key on flushMemo
+function normalizeByFlush(hand, memo) {
+  let sorted = _.sortBy(hand, 'qVal');
+  sorted = _.sortBy(hand, 'suit');
+
+  for (let i = sorted.length - 5; i >= 0; i--) {
+    const fiveCards = sorted.slice(i, i + 5);
+    let isFlush = _.every(fiveCards, card => card.suit === sorted[i].suit);
+
+    if (isFlush) {
+      memo.suit = sorted[i].suit; // set global `flushSuit` variable
+      return [handValues.FLUSH].concat(fiveCards);
+    }
+  }
+
+  // flush doesn't exist
+  return [-1];
 }
 
-function addAcesToStart (hand) {
-    let lastCard = _.last(hand);
-    if (lastCard.qVal === 14) {
-        hand.unshift({qVal: 1, suit: lastCard.suit});
+// Check for straight & straight flush
+function normalizeByStraight(hand, flushSuit) {
+  // sort hand by qVal
+  let sorted = _.sortBy(hand, 'qVal');
+
+  if (flushSuit) {
+    // if there's a flush suit, remove all non-suited cards.
+    // we're only looking for a straight flush
+    sorted = sorted.filter(card => card.suit === flushSuit);
+  } else {
+    // only keep one card of each qVal
+    sorted = removeDuplicateQVals(sorted);
+  }
+
+  // adds an ace with qVal = 1 to index 0 if ace is present in hand
+  addAcesToStart(sorted);
+
+  for (let i = sorted.length - 5; i >= 0; i--) {
+    let fiveCards = sorted.slice(i, i + 5);
+    let isStraight = checkStraight(fiveCards);
+
+    if (isStraight) {
+      let handValue = flushSuit
+        ? handValues.STRAIGHT_FLUSH
+        : handValues.STRAIGHT;
+      return [handValue, _.last(fiveCards).qVal];
     }
+  }
+
+  // no straight
+  return [-1];
+}
+
+function checkStraight(cards) {
+  for (var i = 0; i < cards.length - 1; i++) {
+    let currentCardQVal = cards[i].qVal;
+    let nextCardQVal = cards[i + 1].qVal;
+    if (currentCardQVal + 1 !== nextCardQVal) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function removeDuplicateQVals(hand) {
+  let memo = {};
+  return hand.filter(card => {
+    let isDuped = memo[card.qVal];
+    memo[card.qVal] = true;
+    return !isDuped;
+  });
+}
+
+// adds an ace with qVal=1 if ace is present in hand
+function addAcesToStart(hand) {
+  let lastCard = _.last(hand);
+  if (lastCard.qVal === 14) {
+    hand.unshift({ qVal: 1, suit: lastCard.suit });
+  }
 }
