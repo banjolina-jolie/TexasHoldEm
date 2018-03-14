@@ -1,12 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const winningHands = require('../configs/WinningHands.json');
+const handValues = require('../configs/Hands.json');
+const handTypes = Object.keys(handValues).map(str =>
+  str.toLowerCase().replace('_', ' ')
+);
 
 module.exports = nPlayers => {
   // set handType on each player to be shown in UI
   nPlayers.forEach(nPlayer => {
-    nPlayer.handType = winningHands[nPlayer.nHand[0]].name;
+    nPlayer.handType = `(${handTypes[nPlayer.nHand[0]]})`;
   });
 
   let output = [];

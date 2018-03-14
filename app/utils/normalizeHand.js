@@ -1,21 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const winningHands = require('../configs/WinningHands.json');
+const handValues = require('../configs/Hands.json');
 
-const handValues = {
-  HIGH_CARD: 0,
-  ONE_PAIR: 1,
-  TWO_PAIR: 2,
-  THREE_OF_KIND: 3,
-  STRAIGHT: 4,
-  FLUSH: 5,
-  FULL_HOUSE: 6,
-  FOUR_OF_KIND: 7,
-  STRAIGHT_FLUSH: 8
-};
-
-// A normalized hand is an array representation of the 5 cards a player can use
+// A normalized hand is an array representation of the best 5 cards a player can use
 // The first item is the hand score and the 2nd -> 6th are card qVals
 
 module.exports = sevenCards => {
@@ -29,11 +17,11 @@ module.exports = sevenCards => {
     F = kicker
 
     Examples:
-    - 1 Pair: 2♠, 2♥, 5♦, 7♠, 9♥, J♣, 6♣ => [1, 2, 11, 9, 7]
-    - 2 Pair: 10♠, 10♥, 4♦, 4♠, Q♥, 7♣, 9♣ => [2, 10, 4, 12]
     - Straight: 3♠, 4♥, 5♦, 6♠, 7♥, 4♣, J♣ => [4, 7]
     - Full House: 8♠, 8♥, 8♦, K♣, K♠, 10♥, A♣ => [6, 8, 13]
     - 4 of Kind: Q♠, Q♥, Q♦, Q♣, 4♠, 10♥, A♣ => [7, 12, 14]
+    - 2 Pair: 10♠, 10♥, 4♦, 4♠, Q♥, 7♣, 9♣ => [2, 10, 4, 12]
+    - 1 Pair: 2♠, 2♥, 5♦, 7♠, 9♥, J♣, 6♣ => [1, 2, 11, 9, 7]
     - Flush: 7♥, 2♥, 9♥, 10♥, 4♥, 10♠, A♣ => [5, 10, 9, 7, 4, 2]
   */
 

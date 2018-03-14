@@ -14,9 +14,7 @@ function freshState(playerCount) {
     return { deck, players, gameState, communityCards, rankedPlayers };
 }
 
-
 let TexasHoldEmView = React.createClass({
-
     getInitialState() {
         return freshState(2);
     },
@@ -33,20 +31,23 @@ let TexasHoldEmView = React.createClass({
                 <h2>Texas Hold 'em</h2>
                 <div className="controls">
                     <label>Players</label>
-                    <input type="number" min="2" max="20" value={this.state.players.length} onChange={this._playerCountChanged} />
-                    { this.renderButton() }
+                    <input
+                        type="number"
+                        min="2"
+                        max="20"
+                        value={this.state.players.length}
+                        onChange={this._playerCountChanged}
+                    />
+                    {this.renderButton()}
                 </div>
 
-
                 <div className="players">
-                    { this.state.players.map(this.renderPlayer) }
+                    {this.state.players.map(this.renderPlayer)}
                 </div>
                 <div className="community">
                     <div>Community</div>
-                    { this.state.communityCards.map(this.renderCard) }
+                    {this.state.communityCards.map(this.renderCard)}
                 </div>
-
-
             </div>
         );
     },
@@ -60,7 +61,7 @@ let TexasHoldEmView = React.createClass({
             [this._resetGame, 'Reset']
         ];
         let state = buttonStates[this.state.gameState];
-        return (<button onClick={state[0]}>{state[1]}</button>);
+        return <button onClick={state[0]}>{state[1]}</button>;
     },
 
     renderPlayer(player) {
@@ -80,9 +81,10 @@ let TexasHoldEmView = React.createClass({
         let classes = 'card ';
         classes += card.color;
         return (
-            <span className={classes}>{card.val} {card.suit}</span>
+            <span className={classes}>
+                {card.val} {card.suit}
+            </span>
         );
-
     },
 
     _dealHands() {
@@ -97,7 +99,7 @@ let TexasHoldEmView = React.createClass({
             cardsToDeal--;
         }
 
-        this.setState({deck, players, gameState: 1});
+        this.setState({ deck, players, gameState: 1 });
     },
 
     _dealCommunity(N) {
@@ -115,8 +117,8 @@ let TexasHoldEmView = React.createClass({
                 N--;
             }
 
-            this.setState({deck, communityCards, gameState});
-        }
+            this.setState({ deck, communityCards, gameState });
+        };
     },
 
     _playerCountChanged(e) {
@@ -131,18 +133,20 @@ let TexasHoldEmView = React.createClass({
 
     _showRankings() {
         let players = this.state.players;
-        let rankedPlayers = gamePlay.getRankedPlayers(players, this.state.communityCards);
+        let rankedPlayers = gamePlay.getRankedPlayers(
+            players,
+            this.state.communityCards
+        );
 
         // set rank and handType of each player in this.state.players
         rankedPlayers.forEach(rankedPlayer => {
-            let player = _.findWhere(players, {name: rankedPlayer.name});
+            let player = _.findWhere(players, { name: rankedPlayer.name });
             player.rank = rankedPlayer.rank;
             player.handType = rankedPlayer.handType;
         });
 
-        this.setState({players, rankedPlayers});
+        this.setState({ players, rankedPlayers });
     }
-
 });
 
 module.exports = TexasHoldEmView;
